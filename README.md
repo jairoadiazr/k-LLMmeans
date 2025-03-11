@@ -3,7 +3,9 @@
 
 This repository contains the official implementation of **k-LLMmeans**, a text clustering algorithm that leverages large language models (LLMs) for dynamic centroid generation. 
 
-📄 **Original Paper**: [Available on arXiv](https://arxiv.org/abs/2502.09667)  
+📄 **Original Paper**: J. Diaz-Rodriguez. *"k-LLMmeans: Summaries as Centroids for Interpretable and Scalable LLM-Based Text Clustering"* [Available on arXiv](https://arxiv.org/abs/2502.09667)  
+
+*We introduce k-LLMmeans, a novel modification of the k-means clustering algorithm that utilizes LLMs to generate textual summaries as cluster centroids, thereby capturing contextual and semantic nuances often lost when relying on purely numerical means of document embeddings. This modification preserves the properties of k-means while offering greater interpretability: the cluster centroid is represented by an LLM-generated summary, whose embedding guides cluster assignments. We also propose a mini-batch variant, enabling efficient online clustering for streaming text data and providing real-time interpretability of evolving cluster centroids. Through extensive simulations, we show that our methods outperform vanilla k-means on multiple metrics while incurring only modest LLM usage that does not scale with dataset size. Finally, We present a case study showcasing the interpretability of evolving cluster centroids in sequential text streams. As part of our evaluation, we compile a new dataset from StackExchange, offering a benchmark for text-stream clustering.*
 
 ## 📂 Repository Structure
 - **`kLLMmeans.py`** – Core implementation containing the `kLLMmeans` and `miniBatchKLLMeans` functions. Change value for variable `YOUR_OPENAI_KEY` with your own key before running.
