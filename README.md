@@ -35,7 +35,7 @@ For the Stack Exchange dataset, please cite both:
 - Our processed version: [arXiv:2502.09667](https://arxiv.org/abs/2502.09667)
 - Original source: [Internet Archive](https://archive.org/download/stackexchange)
 
-  _(If you'd like to the raw dataset described in the paper, contact me, and I can provide it for you —see the paper for details.)_
+  _(If you'd like the raw dataset described in the paper, contact me, and I can provide it for you —see the paper for details.)_
 ---
 
 For any inquiries, refer to the contact details in the paper.
