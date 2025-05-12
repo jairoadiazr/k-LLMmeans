@@ -1,4 +1,5 @@
 import numpy as np
+import anthropic
 from openai import AzureOpenAI, OpenAI
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import KMeans, kmeans_plusplus, MiniBatchKMeans
@@ -8,10 +9,108 @@ from sklearn_extra.cluster import KMedoids
 
 from tqdm import tqdm
 
-# OpenAI API Key (set your own key here)
-client = OpenAI(
-            api_key = YOUR_OPENAI_KEY
+client_embeddings = OpenAI(
+                    api_key = OPENAI_KEY
+                )
+
+def llm_api (prompt, assistant_prompt, model = "llama3.3-70b", max_completion_tokens =1000):
+    print(model)
+
+    if model == "gpt-4o" or model == 'gpt-3.5-turbo':
+        # OpenAI API Key (set your own key here)
+        client = OpenAI(
+                    api_key = OPENAI_KEY
+                )
+        response = client.chat.completions.create(
+        messages=[
+                {"role": "system", "content": "You are a helpful assistant summarizing text clusters."},
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": assistant_prompt},
+            ],
+            max_tokens=1000,
+            temperature=0,
+            model=model
         )
+        response_text = response.choices[0].message.content
+        print(response_text)
+        
+    elif model == "llama3.3-70b":
+
+        client = OpenAI(
+            api_key=LLAMA_KEY,
+            base_url="https://api.llama-api.com/"
+        )
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant summarizing text clusters."},
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": assistant_prompt},
+            ],
+            temperature=0,
+            max_completion_tokens=max_completion_tokens,
+            top_p=1,
+            stream=False,
+            stop=None,
+            seed = 1
+        )
+
+        response_text = response.choices[0].message.content
+
+    # Deepseek-chat
+    elif model == "deepseek-chat":
+
+        client = OpenAI( 
+            api_key=DEEPSEEK_KEY,
+            base_url="https://api.deepseek.com")
+
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant summarizing text clusters."},
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": assistant_prompt}
+            ],
+            stream=False,
+            temperature=0,
+            max_tokens=max_completion_tokens,
+            top_p=1,
+            stop=None,
+            seed = 1
+        )
+        if response is None:
+            response_text = ""
+            print(response)
+            # raise Exception("Response is None")
+        else:
+            response_text = response.choices[0].message.content
+
+
+    elif model == "claude-3-7-sonnet-20250219":
+        client = anthropic.Anthropic(
+            api_key=CLAUDE_KEY
+        )
+
+        message = client.messages.create(
+            model=model,
+            max_tokens=max_completion_tokens,
+            temperature=0,
+            system="You are a helpful assistant summarizing text clusters.",
+            messages=[
+                {"role": "user", "content":  prompt},
+                {"role": "assistant", "content": assistant_prompt}
+            ]
+        )
+        response_text = message.content[0].text
+
+
+    else:
+        response_text = "Model not found."
+
+
+
+
+    return response_text
   
 def get_embeddings(texts, model = "text-embedding-3-small", emb_type = 'openai', instructor_prompt = ""):
     """
@@ -25,7 +124,7 @@ def get_embeddings(texts, model = "text-embedding-3-small", emb_type = 'openai',
 
         try:
             
-            result = client.embeddings.create(
+            result = client_embeddings.embeddings.create(
                 model=model,
                 input=text
             )        
@@ -72,7 +171,7 @@ def get_embeddings(texts, model = "text-embedding-3-small", emb_type = 'openai',
         embeddings = model.encode(texts, normalize_embeddings=True)
         return np.array(embeddings)
 
-def summarize_cluster(texts, prompt = "", text_type = ""):
+def summarize_cluster(texts, prompt = "", text_type = "", model = "gpt-4o"):
     """
     Use an LLM to generate a summary of a cluster.
     """
@@ -90,34 +189,23 @@ def summarize_cluster(texts, prompt = "", text_type = ""):
         {"role": "assistant", "content": text_type}
     ]
     
-    response = client.chat.completions.create(
-        messages=messages,  # Use the properly formatted messages
-        max_tokens=1000,
-        temperature=0,
-        model="gpt-4o"
-    )
-    response_text = response.choices[0].message.content
+    response_text = llm_api(prompt,text_type,model)
     return response_text
 
-def representative_cluster(texts):
+def representative_cluster(texts,model="gpt-4o"):
     """
     Use an LLM to generate a summary of a cluster.
     """
     prompt = f"Identify the text that best represents the overall meaning and key themes of the following cluster of texts:\n\n" + "\n".join(texts)  # Limit to 5 for brevity
     
+    text_type = "Representative Text:"
     messages = [
         {"role": "system", "content": "You are a helpful assistant selecting the representatives of text clusters."},
         {"role": "user", "content": prompt},
-        {"role": "assistant", "content": "Representative Text:"}
+        {"role": "assistant", "content": text_type}
     ]
     
-    response = client.chat.completions.create(
-        messages=messages,  # Use the properly formatted messages
-        max_tokens=1000,
-        temperature=0,
-        model="gpt-4o"
-    )
-    response_text = response.choices[0].message.content
+    response_text = llm_api(prompt,text_type,model)
     return response_text
 
 def sequentialMiniBatchKmeans(text_features, num_clusters, random_state, max_batch_size, max_iter = 100):
@@ -148,7 +236,8 @@ def miniBatchKLLMeans(text_data,
               max_iter = 100, tol=1e-4, random_state = None, 
               emb_type = 'openai', text_features = None,
               final_iter = True,
-              initial_iter = True):
+              initial_iter = True,
+              model = "gpt-4o"):
     
     num_batches = int(np.ceil(len(text_data)/max_batch_size))
     k, m = divmod(len(text_data), num_batches)
@@ -173,7 +262,8 @@ def miniBatchKLLMeans(text_data,
               max_iter = max_iter, tol=tol, random_state = random_state, 
               emb_type = emb_type, text_features = text_features[ibatch],
               final_iter = final_iter,
-              initial_iter = initial_iter)
+              initial_iter = initial_iter,
+              model = model)
         
         batch_counts = np.array([np.sum(np.array(batch_assignments)==i) for i in range(num_clusters)])
 
@@ -197,7 +287,8 @@ def kLLMmeans(text_data,
               emb_type = 'openai', text_features = None,
               final_iter = True,
               initial_iter = True,
-              instructor_prompt = ""):
+              instructor_prompt = "",
+              model = "gpt-4o"):
     """
     Runs iterative KMeans clustering with dynamic centroid updates using LLM summaries.
     """
@@ -249,7 +340,7 @@ def kLLMmeans(text_data,
                 clustered_texts[cluster].append(text)
 
         # Generate summaries for each cluster
-        summaries = [summarize_cluster(clustered_texts[i], prompt, text_type) if clustered_texts[i] else "" for i in range(num_clusters)]
+        summaries = [summarize_cluster(clustered_texts[i], prompt, text_type, model) if clustered_texts[i] else "" for i in range(num_clusters)]
         summaries_evolution.append(summaries)
 
         # Obtain embeddings of summaries
@@ -284,7 +375,8 @@ def kLLMmedoids(text_data,
               max_iter = 100, tol=1e-4, random_state = None, 
               emb_type = 'openai', labels = [], text_features = None,
               final_iter = False,
-              initial_iter = False):
+              initial_iter = False,
+              model = "gpt-4o"):
     """
     Runs iterative KMeans clustering with dynamic centroid updates using LLM summaries.
     """
@@ -322,7 +414,7 @@ def kLLMmedoids(text_data,
             clustered_texts[cluster].append(text)
 
         # Generate summaries for each cluster
-        representatives = [representative_cluster(clustered_texts[i]) if clustered_texts[i] else "" for i in range(num_clusters)]
+        representatives = [representative_cluster(clustered_texts[i], model) if clustered_texts[i] else "" for i in range(num_clusters)]
         
         # Obtain embeddings of summaries
         representative_embeddings = get_embeddings(representatives, emb_type = emb_type)

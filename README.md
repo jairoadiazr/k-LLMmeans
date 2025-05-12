@@ -8,10 +8,11 @@ This repository contains the official implementation of **k-LLMmeans**, a text c
 *We introduce k-LLMmeans, a novel modification of the k-means clustering algorithm that utilizes LLMs to generate textual summaries as cluster centroids, thereby capturing contextual and semantic nuances often lost when relying on purely numerical means of document embeddings. This modification preserves the properties of k-means while offering greater interpretability: the cluster centroid is represented by an LLM-generated summary, whose embedding guides cluster assignments. We also propose a mini-batch variant, enabling efficient online clustering for streaming text data and providing real-time interpretability of evolving cluster centroids. Through extensive simulations, we show that our methods outperform vanilla k-means on multiple metrics while incurring only modest LLM usage that does not scale with dataset size. Finally, We present a case study showcasing the interpretability of evolving cluster centroids in sequential text streams. As part of our evaluation, we compile a new dataset from StackExchange, offering a benchmark for text-stream clustering.*
 
 ## 📂 Repository Structure
-- **`kLLMmeans.py`** – Core implementation containing the `kLLMmeans` and `miniBatchKLLMeans` functions. Change value for variable `YOUR_OPENAI_KEY` with your own key before running.
+- **`kLLMmeans.py`** – Core implementation containing the `kLLMmeans` and `miniBatchKLLMeans` functions. Change value for variable `OPENAI_KEY`, `LLAMA_KEY`, `CLAUDE_KEY`, `DEEPSEEK_KEY` with your own keys before running.
 - **`data_loaders/`** – Contains scripts for loading and preprocessing all data.
 - **`data_loaders/clean_stackexchange.csv`** – Contains the clean stackexchange dataset used in the paper (unzip first)
 - **`processed_data/`** – Folder where processed datasets will be stored (must be generated first).
+- **`results/`** – Folder where results will be stored. It contains notebooks to calculate average ACC, NMI, dist.
 - **Notebooks:**
   - `offline_experiments.ipynb` – Reproduces offline experiments from the paper.
   - `sequential_experiments.ipynb` – Runs sequential experiments.
@@ -28,6 +29,9 @@ This repository contains the official implementation of **k-LLMmeans**, a text c
 
 2. **Run Experiments**:  
    Open the provided Jupyter notebooks to reproduce the results from the paper.
+
+3. **Process results**:  
+   Open the provided Jupyter notebooks process results and get average ACC, NMI, dist.
 
 ## 📜 Citation
 If you use this code or any of the data provided in this repository in your research, please cite the official paper:  
